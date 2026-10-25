@@ -1,0 +1,11 @@
+{
+  "name": "scraper-api-test",
+  "private": true,
+  "type": "module",
+  "description": "Exemplo de chamada da Scraper API da 2Captcha para a página de consulta da FIPE.",
+  "scripts": {
+    "scrape": "node src/scrape-fipe.mjs",
+    "scrape:html": "node src/scrape-fipe-html.mjs",
+    "scrape:screenshot": "node src/scrape-fipe-screenshot.mjs"
+  }
+}
