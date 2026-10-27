@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Browser API da 2Captcha — POC</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1c2430;
+      --muted: #5c6b7a;
+      --line: #d9e1ea;
+      --paper: #f6f8fb;
+      --card: #fff;
+      --accent: #0f6f6a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 16px/1.55 "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px 72px;
+    }
+    h1 { font-size: 2rem; line-height: 1.2; margin-bottom: 8px; }
+    h2 {
+      margin-top: 2.4rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--line);
+      font-size: 1.35rem;
+    }
+    h3 { font-size: 1.05rem; margin-bottom: 0.4rem; }
+    p, li { color: var(--ink); }
+    a { color: var(--accent); }
+    .lead { color: var(--muted); font-size: 1.05rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin: 16px 0;
+    }
+    pre {
+      overflow: auto;
+      background: #132028;
+      color: #e7eef4;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+    code { font-family: Consolas, "Courier New", monospace; }
+    p code, li code, td code {
+      background: #e7eef2;
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0 8px; background: var(--card); }
+    th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    th { background: #e8f3f2; }
+    .meta { font-size: 0.92rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Browser API da 2Captcha</h1>
+    <p class="lead">Prova de conceito da <a href="https://github.com/BotPag/parcelatudo-front/issues/298">issue 298</a>. O código está em <a href="https://github.com/hinale/scraper-api-test">hinale/scraper-api-test</a>. O guia oficial é a <a href="https://2captcha.com/scraper/browser-api/api">Browser API</a>.</p>
+    <p>O script usa a <a href="https://pptr.dev/">Puppeteer</a> pelo pacote <a href="https://www.npmjs.com/package/puppeteer-core"><code>puppeteer-core</code></a>. O Chrome não roda na máquina local: a 2Captcha sobe a sessão e o Puppeteer só conecta nela.</p>
+
+    <h2>O que a API faz</h2>
+    <p>A Browser API entrega um Chrome na nuvem. A gestão fica em <code>https://api.2captcha.com</code>. O browser fica em <code>ws://…@cb.2captcha.com:9222</code>. A mesma chave da conta 2Captcha vale para esta API e para a Scraper API. Ela vai no campo <code>key</code>.</p>
+    <p>A <a href="scraper-api.html">Scraper API</a> abre uma URL e devolve o HTML dessa página. A Browser API deixa o script clicar, preencher e esperar o JavaScript. Por isso a consulta da FIPE, que depende do formulário, cabe aqui.</p>
+    <p>O fluxo desta POC:</p>
+    <ol>
+      <li><code>GET /browser/accounts</code> reaproveita a conta chamada <code>scraper-api-test</code>. Se ela não existir, <code>POST /browser/accounts</code> cria uma, com <code>proxyMode: "none"</code>.</li>
+      <li><code>POST /browser/connection</code> devolve o <code>connectionUri</code>. A sessão só começa quando o Puppeteer conecta.</li>
+      <li><code>puppeteer.connect({ browserWSEndpoint })</code> abre a página e liga <code>Captcha.setAutoSolve</code>.</li>
+      <li>O script escolhe mês, marca, modelo e ano e lê o preço médio.</li>
+    </ol>
+
+    <h2>O que é necessário</h2>
+    <ul>
+      <li>Conta 2Captcha e a API key. Se <code>BROWSER_API_KEY</code> estiver vazia, o script usa <code>SCRAPER_API_KEY</code>.</li>
+      <li>Node.js com <code>puppeteer-core</code>. Não é preciso instalar o Chrome local.</li>
+      <li>Um proxy de saída. Sem proxy, a conta cai no IPv6 gratuito da 2Captcha. Esse modo é temporário na documentação e a FIPE bloqueia esse IP.</li>
+    </ul>
+    <p>O modelo está em <code>.env.example</code>. O <code>.env</code> não é versionado. A URL de conexão e a senha do proxy não entram no log.</p>
+    <pre><code>BROWSER_API_BASE_URL=https://api.2captcha.com
+BROWSER_API_KEY=
+BROWSER_PROXY_TYPE=http
+BROWSER_PROXY_HOST=
+BROWSER_PROXY_PORT=
+BROWSER_PROXY_LOGIN=
+BROWSER_PROXY_PASSWORD=</code></pre>
+    <p>Com host e porta preenchidos, o script manda <code>customProxy</code> em <code>POST /browser/connection</code>. Esse proxy vale só para aquela conexão e tem prioridade sobre o proxy salvo na conta.</p>
+
+    <h2>Como rodar</h2>
+    <pre><code>npm install
+node src/browser-fipe.mjs \
+  --marca Renault \
+  --modelo "Sandero Authentique Hi-Flex 1.0 16V" \
+  --ano 2011</code></pre>
+    <p>Marca, modelo e ano são parâmetros. Cada palavra do modelo precisa aparecer no texto da opção da FIPE. <code>Sandero authentique 1.0 16V</code> sozinho combina com duas opções, Hi-Flex e Hi-Power. O comando acima usa Hi-Flex, que é a versão com ano <code>2011 Flex</code>.</p>
+    <p>A consulta é feita duas vezes, em <code>setembro/2025</code> e <code>setembro/2026</code>. O stdout é só o JSON pedido na issue, com os valores em centavos:</p>
+    <pre><code>{
+  "sep2025": 2553500,
+  "sep2026": 2513600
+}</code></pre>
+    <p><code>R$ 25.535,00</code> vira <code>2553500</code>. <code>R$ 25.136,00</code> vira <code>2513600</code>. Esses dois números foram lidos no formulário oficial, fora da Browser API, para cravar o seletor e a conversão. A execução pela Browser API ainda não devolveu esse JSON. O motivo está na seção seguinte.</p>
+
+    <h2>Trecho que conecta e preenche</h2>
+    <p>A conta e a URL saem da API HTTP. O Puppeteer só recebe o WebSocket.</p>
+    <pre><code>const connection = await fetch("https://api.2captcha.com/browser/connection", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    key: apiKey,
+    accountId: account.id
+  })
+});
+const { connectionUri } = await connection.json();
+
+const browser = await puppeteer.connect({ browserWSEndpoint: connectionUri });
+const page = await browser.newPage();
+const session = await page.createCDPSession();
+await session.send("Captcha.setAutoSolve", {
+  autoSolve: true,
+  options: [{ type: "*" }]
+});
+await page.goto("https://veiculos.fipe.org.br/#carro");</code></pre>
+    <p>No site, o modelo está no select <code>#selectAnoModelocarro</code> e o ano em <code>#selectAnocarro</code>. O script dispara o <code>change</code> do jQuery da própria página, que é o que carrega a lista seguinte, e clica em <code>#buttonPesquisarcarro</code>. O preço sai da tabela <code>#resultadoConsultacarroFiltros</code>.</p>
+
+    <h2>O que a execução de 27/10/2026 devolveu</h2>
+    <div class="card">
+      <p>A conexão com <code>cb.2captcha.com</code> funcionou e o <code>Captcha.setAutoSolve</code> foi aceito. A página da FIPE abriu com o título <code>Attention Required! | Cloudflare</code> e o texto <code>Sorry, you have been blocked</code>.</p>
+      <p>A chave usada não tem proxy 2Captcha (<code>proxy_account_not_created</code>). A conta ficou em <code>proxyMode: "none"</code>, no IPv6 gratuito. O Cloudflare bloqueia esse IP antes do formulário. Não houve evento <code>Captcha.detected</code>: a tela é um bloqueio, não um desafio para resolver.</p>
+      <p>O script agora reconhece essa tela e encerra na hora, em vez de esperar o formulário. Para obter o JSON, preencha <code>BROWSER_PROXY_HOST</code> e <code>BROWSER_PROXY_PORT</code> com um proxy que a FIPE aceite e rode de novo.</p>
+    </div>
+
+    <h2>Limites usados</h2>
+    <ul>
+      <li>Uma conexão CDP por perfil. O script fecha o browser no fim para soltar o perfil.</li>
+      <li>A sessão na nuvem dura no máximo 30 minutos.</li>
+      <li>A listagem de contas vem em <code>data</code> como objeto, não como array. O script lê <code>Object.values</code>.</li>
+    </ul>
+  </main>
+</body>
+</html>
