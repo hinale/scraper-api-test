@@ -2,10 +2,15 @@
   "name": "scraper-api-test",
   "private": true,
   "type": "module",
-  "description": "Exemplo de chamada da Scraper API da 2Captcha para a página de consulta da FIPE.",
+  "description": "Exemplos de chamada da Scraper API e da Browser API da 2Captcha para a consulta da FIPE.",
   "scripts": {
     "scrape": "node src/scrape-fipe.mjs",
     "scrape:html": "node src/scrape-fipe-html.mjs",
-    "scrape:screenshot": "node src/scrape-fipe-screenshot.mjs"
+    "scrape:screenshot": "node src/scrape-fipe-screenshot.mjs",
+    "browser": "node src/browser-fipe.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "puppeteer-core": "^24.43.1"
   }
 }

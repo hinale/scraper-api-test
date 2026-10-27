@@ -2,6 +2,17 @@
 
 Exemplo de chamada da [Scraper API](https://2captcha.com/scraper/scraper-api/api) da 2Captcha, no formato da [issue 293](https://github.com/BotPag/parcelatudo-front/issues/293).
 
+A [issue 298](https://github.com/BotPag/parcelatudo-front/issues/298) acrescenta a [Browser API](https://2captcha.com/scraper/browser-api/api): o script abre a FIPE num Chrome na nuvem, preenche marca, modelo e ano e devolve o preço de setembro de 2025 e de setembro de 2026, em centavos. O guia está em `docs/browser-api.html`.
+
+Na execução de 27/10/2026 a conexão CDP funcionou, e a FIPE respondeu com bloqueio do Cloudflare no IPv6 gratuito (`proxyMode: "none"`). Sem um proxy em `BROWSER_PROXY_HOST`, o script encerra com esse motivo e não imprime o JSON de preços.
+
+```bash
+node src/browser-fipe.mjs \
+  --marca Renault \
+  --modelo "Sandero Authentique Hi-Flex 1.0 16V" \
+  --ano 2011
+```
+
 A chamada abre uma única URL e devolve o HTML. Marca, modelo e ano entram na POC para identificar a consulta pedida. A API não recebe esses campos e não preenche o formulário da FIPE.
 
 ## Chamada
